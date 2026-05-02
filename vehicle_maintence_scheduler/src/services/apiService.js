@@ -58,20 +58,3 @@ exports.fetchVehicles = async () => {
     throw new AppError('Failed to fetch vehicles from external API', 502);
   }
 };
-
-/**
- * Fetch all priority notifications
- * @returns {Promise<Array>} List of raw notifications
- */
-exports.fetchNotifications = async () => {
-  try {
-    // Assuming the endpoint is /notifications
-    const response = await apiClient.get('/notifications');
-    return response.data;
-  } catch (error) {
-    const status = error.response ? error.response.status : 'N/A';
-    const data = error.response ? JSON.stringify(error.response.data) : error.message;
-    logger.error(`Error fetching notifications (Status: ${status}): ${data}`);
-    throw new AppError('Failed to fetch notifications from external API', 502);
-  }
-};

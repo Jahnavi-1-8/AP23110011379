@@ -27,37 +27,7 @@ axiosRetry(apiClient, {
   }
 });
 
-/**
- * Fetch all depots
- * @returns {Promise<Array>} List of depots
- */
-exports.fetchDepots = async () => {
-  try {
-    const response = await apiClient.get('/depots');
-    return response.data;
-  } catch (error) {
-    const status = error.response ? error.response.status : 'N/A';
-    const data = error.response ? JSON.stringify(error.response.data) : error.message;
-    logger.error(`Error fetching depots (Status: ${status}): ${data}`);
-    throw new AppError('Failed to fetch depots from external API', 502);
-  }
-};
 
-/**
- * Fetch all vehicles with their tasks
- * @returns {Promise<Array>} List of vehicles
- */
-exports.fetchVehicles = async () => {
-  try {
-    const response = await apiClient.get('/vehicles');
-    return response.data;
-  } catch (error) {
-    const status = error.response ? error.response.status : 'N/A';
-    const data = error.response ? JSON.stringify(error.response.data) : error.message;
-    logger.error(`Error fetching vehicles (Status: ${status}): ${data}`);
-    throw new AppError('Failed to fetch vehicles from external API', 502);
-  }
-};
 
 /**
  * Fetch all priority notifications

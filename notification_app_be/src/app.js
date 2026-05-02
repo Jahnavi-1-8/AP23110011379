@@ -1,6 +1,5 @@
 const express = require('express');
 const morgan = require('morgan');
-const schedulerRoutes = require('./routes/schedulerRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const errorMiddleware = require('./middlewares/errorMiddleware');
 const AppError = require('./utils/errorHandler');
@@ -16,7 +15,6 @@ app.use(express.json());
 app.use(morgan('combined', { stream: { write: message => logger.info(message.trim()) } }));
 
 // Routes
-app.use('/api/v1/schedule', schedulerRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 
 // Health check endpoint
