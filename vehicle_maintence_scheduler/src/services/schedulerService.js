@@ -19,8 +19,8 @@ exports.generateOptimalSchedule = async (depotId) => {
       apiService.fetchVehicles()
     ]);
 
-    const depotsList = typeof depotsData === 'string' ? JSON.parse(depotsData).depots : (depotsData.depots || []);
-    const vehiclesList = typeof vehiclesData === 'string' ? JSON.parse(vehiclesData).vehicles : (vehiclesData.vehicles || []);
+    const depotsList = typeof depotsData === 'string' ? JSON.parse(depotsData).depots : (depotsData.depots || depotsData);
+    const vehiclesList = typeof vehiclesData === 'string' ? JSON.parse(vehiclesData).vehicles : (vehiclesData.vehicles || vehiclesData);
 
     // 2. Validate responses
     if (!Array.isArray(depotsList) || !Array.isArray(vehiclesList)) {
@@ -38,6 +38,20 @@ exports.generateOptimalSchedule = async (depotId) => {
     }
 
     const mechanicHours = targetDepot.MechanicHours;
+
+    // Filter vehicles to the requested depot when the depot association field exists
+    const depotFieldKeys = ['DepotId', 'DepotID', 'depotId', 'depotID'];
+    const filteredVehicles = vehiclesList.filter(vehicle => {
+      const depotKey = depotFieldKeys.find(key => Object.prototype.hasOwnProperty.call(vehicle, key));
+      return depotKey ? Number(vehicle[depotKey]) === Number(depotId) : true;
+    });
+
+    let allTasks = filteredVehicles;
+
+    if (filteredVehicles.length === 0 && vehiclesList.length > 0) {
+      await Log('backend', 'warn', 'service', `No depot-specific vehicles found for depot ${depotId}; using full vehicle set`);
+      allTasks = vehiclesList;
+    }
     await Log('backend', 'info', 'service', `Depot found with capacity ${mechanicHours}`);
 
     if (mechanicHours <= 0) {
@@ -51,9 +65,6 @@ exports.generateOptimalSchedule = async (depotId) => {
         message: 'No available mechanic hours.'
       };
     }
-
-    // 4. Extract tasks
-    let allTasks = vehiclesList;
 
     if (allTasks.length === 0) {
       await Log('backend', 'error', 'service', `No tasks available`);

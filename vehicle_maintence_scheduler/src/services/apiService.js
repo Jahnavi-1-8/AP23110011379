@@ -4,6 +4,19 @@ const env = require('../config/env');
 const logger = require('../config/logger');
 const AppError = require('../utils/errorHandler');
 
+const fallbackData = {
+  depots: [
+    { ID: 1, MechanicHours: 8 },
+    { ID: 2, MechanicHours: 6 }
+  ],
+  vehicles: [
+    { ID: 101, DepotId: 1, Duration: 2, Impact: 30, Task: 'Oil change' },
+    { ID: 102, DepotId: 1, Duration: 4, Impact: 60, Task: 'Brake inspection' },
+    { ID: 103, DepotId: 2, Duration: 3, Impact: 45, Task: 'Tire replacement' },
+    { ID: 104, DepotId: 2, Duration: 1, Impact: 20, Task: 'Battery check' }
+  ]
+};
+
 // Create axios instance
 const apiClient = axios.create({
   baseURL: env.API_BASE_URL,
@@ -27,6 +40,19 @@ axiosRetry(apiClient, {
   }
 });
 
+const handleApiError = (error, resourceName) => {
+  const status = error.response?.status || 502;
+  const data = error.response ? JSON.stringify(error.response.data) : error.message;
+  logger.error(`Error fetching ${resourceName} (Status: ${status}): ${data}`);
+
+  if (status === 401 && env.NODE_ENV !== 'production') {
+    logger.warn(`Using local fallback ${resourceName} data because external API auth failed`);
+    return fallbackData[resourceName];
+  }
+
+  throw new AppError(`Failed to fetch ${resourceName} from external API`, status);
+};
+
 /**
  * Fetch all depots
  * @returns {Promise<Array>} List of depots
@@ -36,10 +62,7 @@ exports.fetchDepots = async () => {
     const response = await apiClient.get('/depots');
     return response.data;
   } catch (error) {
-    const status = error.response ? error.response.status : 'N/A';
-    const data = error.response ? JSON.stringify(error.response.data) : error.message;
-    logger.error(`Error fetching depots (Status: ${status}): ${data}`);
-    throw new AppError('Failed to fetch depots from external API', 502);
+    return handleApiError(error, 'depots');
   }
 };
 
@@ -52,9 +75,6 @@ exports.fetchVehicles = async () => {
     const response = await apiClient.get('/vehicles');
     return response.data;
   } catch (error) {
-    const status = error.response ? error.response.status : 'N/A';
-    const data = error.response ? JSON.stringify(error.response.data) : error.message;
-    logger.error(`Error fetching vehicles (Status: ${status}): ${data}`);
-    throw new AppError('Failed to fetch vehicles from external API', 502);
+    return handleApiError(error, 'vehicles');
   }
 };
